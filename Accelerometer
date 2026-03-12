@@ -1,0 +1,39 @@
+#include <RedBot.h>
+RedBotMotors motors;
+
+// The RedBot library includes support for the accelerometer. We've tried
+// to make using the accelerometer as easy as to use as possible.
+
+RedBotAccel accelerometer;
+
+void setup(void) {
+  Serial.begin(9600);
+  Serial.println("Accelerometer Readings:");
+  Serial.println();
+  Serial.println("(X, Y, Z) -- [X-Z, Y-Z, X-Y]");
+  Serial.println("============================");
+}
+
+void loop(void) {
+  accelerometer.read();  // updates the x, y, and z axis readings on the acceleromter
+
+  // Display out the X, Y, and Z - axis "acceleration" measurements and also
+  // the relative angle between the X-Z, Y-Z, and X-Y vectors. (These give us
+  // the orientation of the RedBot in 3D space.
+
+  
+  Serial.print(accelerometer.x);
+  Serial.print(", ");  // tab
+
+  Serial.print(accelerometer.y);
+  Serial.print(", ");  // tab
+
+
+
+  Serial.print(accelerometer.angleXY);
+  Serial.println(", ");
+
+
+  // short delay in between readings/
+  delay(100);
+}

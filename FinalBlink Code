@@ -1,0 +1,31 @@
+int relayPin  = 2;
+int buttonPin = 4;
+bool ledState = false;        // tracks if LED is on or off
+bool lastButtonState = HIGH;  // tracks previous button state
+
+void setup() {
+  pinMode(relayPin, OUTPUT);
+  pinMode(buttonPin, INPUT_PULLUP);
+  digitalWrite(relayPin, LOW);  // start OFF
+  Serial.begin(9600);
+}
+
+void loop() {
+  int buttonState = digitalRead(buttonPin);
+
+  // Only trigger on the moment button is PRESSED (HIGH → LOW)
+  if (lastButtonState == HIGH && buttonState == LOW) {
+    ledState = !ledState;  // flip the state
+
+    if (ledState) {
+      digitalWrite(relayPin, HIGH);  // LED ON
+      Serial.println("Toggled → LED ON");
+    } else {
+      digitalWrite(relayPin, LOW);   // LED OFF
+      Serial.println("Toggled → LED OFF");
+    }
+    delay(200);  // debounce delay
+  }
+
+  lastButtonState = buttonState;  // save state for next loop
+}

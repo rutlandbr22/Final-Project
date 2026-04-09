@@ -1,0 +1,41 @@
+/*
+  Button → Songle Relay → LED
+  Uses Active Low logic (LOW = relay ON, HIGH = relay OFF)
+  
+  Wiring:
+  - Button: Pin 3 → GND
+  - Relay IN: Pin 2
+  - Relay VCC: 5V
+  - Relay GND: GND
+  - LED: connected to relay NO (Normally Open) terminal
+*/
+
+// ---- Pin Definitions ----
+int relayPin  = 2;  // Songle relay signal pin (Active Low)
+int buttonPin = 4;  // Button connected to digital pin 3
+
+// ---- Setup: runs once on power-on or reset ----
+void setup() {
+  pinMode(relayPin, OUTPUT);
+  pinMode(buttonPin, INPUT_PULLUP);   // Internal pull-up, no external resistor needed
+
+  digitalWrite(relayPin, HIGH);       // Default state: relay OFF (Active Low)
+
+  Serial.begin(9600);
+  Serial.println("System ready. Press button to activate relay.");
+}
+
+// ---- Loop: runs forever ----
+void loop() {
+  int buttonState = digitalRead(buttonPin);
+
+  if (buttonState == LOW) {           // LOW = button pressed (INPUT_PULLUP logic)
+    digitalWrite(relayPin, LOW);      // Active Low → relay ON → LED ON
+    Serial.println("Button pressed  → Relay ON  → LED ON");
+  } else {
+    digitalWrite(relayPin, HIGH);     // Active Low → relay OFF → LED OFF
+    Serial.println("Button released → Relay OFF → LED OFF");
+  }
+
+  delay(50);  // Small debounce delay
+}

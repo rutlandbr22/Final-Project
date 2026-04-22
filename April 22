@@ -1,0 +1,77 @@
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_ADXL345_U.h>
+
+Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified(12345);
+
+// Relay & Button Pins
+const int relayPin1 = 2;
+const int buttonPin1 = 4;
+const int relayPin2 = 3;
+const int buttonPin2 = 6;
+
+bool relay1State = false;
+bool lastButton1State = HIGH;
+bool relay2State = false;
+bool lastButton2State = HIGH;
+
+// Accelerometer LED & Moving Average Variables
+const int accelLedPin = 9;
+const int numSamples = 5; // 5 samples * 50ms = 250ms (Quarter Second)
+float samples[numSamples];
+int sampleIndex = 0;
+float threshold = 0.5;
+
+void setup() {
+  pinMode(relayPin1, OUTPUT);
+  pinMode(buttonPin1, INPUT_PULLUP);
+  pinMode(relayPin2, OUTPUT);
+  pinMode(buttonPin2, INPUT_PULLUP);
+  pinMode(accelLedPin, OUTPUT);
+  
+  if(!accel.begin()) while(1);
+
+  // Initialize array with 0
+  for (int i = 0; i < numSamples; i++) samples[i] = 0;
+}
+
+void loop() {
+  sensors_event_t event;
+  accel.getEvent(&event);
+
+  // --- 1. Relay Toggle Logic ---
+  handleButton(buttonPin1, lastButton1State, relay1State, relayPin1);
+  handleButton(buttonPin2, lastButton2State, relay2State, relayPin2);
+
+  // --- 2. Y-Axis Moving Average Logic ---
+  // Add new reading and move index
+  samples[sampleIndex] = event.acceleration.y;
+  sampleIndex = (sampleIndex + 1) % numSamples; // Wraps back to 0 after 4
+
+  // Calculate the average of the current buffer
+  float sum = 0;
+  for (int i = 0; i < numSamples; i++) {
+    sum += samples[i];
+  }
+  float averageY = sum / numSamples;
+
+  // Control LED based on the moving average
+  // (Updated every loop, but represents the last 250ms of movement)
+  if (averageY > -threshold) { 
+    digitalWrite(accelLedPin, HIGH); 
+  } else {
+    digitalWrite(accelLedPin, LOW); 
+  }
+
+  delay(50); 
+}
+
+void handleButton(int bPin, bool &lastState, bool &rState, int rPin) {
+  bool currentState = digitalRead(bPin);
+  if (lastState == HIGH && currentState == LOW) {
+    rState = !rState;
+    digitalWrite(rPin, rState ? HIGH : LOW);
+    delay(50); 
+  }
+  lastState = currentState;
+}

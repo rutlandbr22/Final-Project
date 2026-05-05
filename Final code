@@ -1,0 +1,83 @@
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_ADXL345_U.h>
+
+Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified();
+
+// Set 1: Pins and States
+int relayPin1 = 2;
+int buttonPin1 = 4;
+bool relay1State = false;
+bool lastButton1State = HIGH;
+
+// Set 2: Pins and States
+int relayPin2 = 3;
+int buttonPin2 = 6;
+bool relay2State = false;
+bool lastButton2State = HIGH;
+
+// Accelerometer LED
+int accelLedPin = 9;
+float lastMagnitude = 0;
+
+void setup() {
+  pinMode(relayPin1, OUTPUT);
+  pinMode(buttonPin1, INPUT_PULLUP);
+  digitalWrite(relayPin1, LOW);
+
+  pinMode(relayPin2, OUTPUT);
+  pinMode(buttonPin2, INPUT_PULLUP);
+  digitalWrite(relayPin2, LOW);
+
+  pinMode(accelLedPin, OUTPUT);
+
+  Serial.begin(9600);
+  if (!accel.begin()) {
+    Serial.println("No ADXL345 detected!");
+    while (1);
+  }
+}
+
+void loop() {
+  sensors_event_t event;
+  accel.getEvent(&event);
+
+  // --- PART 1: BUTTON & RELAY LOGIC ---
+  int button1State = digitalRead(buttonPin1);
+  int button2State = digitalRead(buttonPin2);
+
+  if (lastButton1State == HIGH && button1State == LOW) {
+    relay1State = !relay1State;
+    digitalWrite(relayPin1, relay1State ? HIGH : LOW);
+    delay(50); 
+  }
+  lastButton1State = button1State;
+
+  if (lastButton2State == HIGH && button2State == LOW) {
+    relay2State = !relay2State;
+    digitalWrite(relayPin2, relay2State ? HIGH : LOW);
+    delay(50);
+  }
+  lastButton2State = button2State;
+
+  // --- PART 2: ACCELEROMETER LED LOGIC ---
+  // Calculate total acceleration magnitude: sqrt(x^2 + y^2 + z^2)
+  float magnitude = sqrt(pow(event.acceleration.x, 2) + 
+                         pow(event.acceleration.y, 2) + 
+                         pow(event.acceleration.z, 2));
+
+  // Determine if it's stationary (near 9.8 m/s^2) or slowing down (magnitude decreasing)
+  // We use a small threshold (0.5) to account for sensor noise
+  if (abs(magnitude - 9.8) < 0.8 || magnitude < lastMagnitude) {
+    digitalWrite(accelLedPin, HIGH); // LED ON
+  } else {
+    digitalWrite(accelLedPin, LOW);  // LED OFF
+  }
+
+  lastMagnitude = magnitude; // Save for next comparison
+
+  // Serial Output
+  Serial.print("Mag: "); Serial.println(magnitude);
+  
+  delay(100); 
+}
